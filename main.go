@@ -18,7 +18,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const AnswerLineNum = 2
+const AnswerLineNum = 3
 
 var (
 	FreyaKey        = os.Getenv("FREYA") // nolint:gochecknoglobals
@@ -187,7 +187,7 @@ func (c *Client) ProcessOutput() {
 			lineNum = 0
 		}
 
-		if lineNum == AnswerLineNum {
+		if lineNum > 0 && lineNum <= AnswerLineNum {
 			if strings.Contains(line, "IN A") {
 				domain := ProcessRecord(line)
 				_, err = w.WriteString(domain + "\n")
