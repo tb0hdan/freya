@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/sha256"
 	"fmt"
@@ -10,11 +11,14 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/go-retryablehttp"
 	log "github.com/sirupsen/logrus"
 )
+
+const AnswerLineNum = 2
 
 var (
 	FreyaKey        = os.Getenv("FREYA") // nolint:gochecknoglobals
@@ -161,6 +165,44 @@ func (c *Client) Check() {
 	}
 }
 
+func (c *Client) ProcessOutput() {
+	res, err := os.Create("/tmp/results.txt") // nolint:gosec
+	if err != nil {
+		panic(err)
+	}
+
+	w := bufio.NewWriter(res)
+
+	f, err := os.Open("/tmp/output.txt")
+	if err != nil {
+		panic(err)
+	}
+
+	lineNum := 0
+	scan := bufio.NewScanner(f)
+
+	for scan.Scan() {
+		line := scan.Text()
+		if strings.HasPrefix(line, ";; ANSWER SECTION:") {
+			lineNum = 0
+		}
+
+		if lineNum == AnswerLineNum {
+			if strings.Contains(line, "IN A") {
+				domain := ProcessRecord(line)
+				_, err = w.WriteString(domain + "\n")
+
+				if err != nil {
+					panic(err)
+				}
+			}
+		}
+		lineNum++
+	}
+
+	_ = w.Flush()
+}
+
 func (c *Client) RunMassDNS() {
 	dnsCmd := exec.Command("/massdns", "-q", "-r", "/tmp/resolvers.txt", "/tmp/input.txt", "-w", "/tmp/output.txt")
 	err := dnsCmd.Start()
@@ -182,8 +224,22 @@ func (c *Client) Run() {
 	err = c.Download("https://api.domainsproject.org/api/vo/resolvers", "/tmp/resolvers.txt")
 	fmt.Println(err)
 	c.RunMassDNS()
-	err = c.Upload("https://api.domainsproject.org/api/vo/upload", "/tmp/output.txt")
+	//
+	c.ProcessOutput()
+	//
+	err = c.Upload("https://api.domainsproject.org/api/vo/upload", "/tmp/results.txt")
 	fmt.Println(err)
+	os.Remove("/tmp/input.txt")
+	os.Remove("/tmp/output.txt")
+	os.Remove("/tmp/results.txt")
+}
+
+func ProcessRecord(line string) string {
+	domain := strings.Split(line, " ")[0]
+	domain = strings.TrimSuffix(domain, ".")
+	domain = strings.ToLower(domain)
+
+	return domain
 }
 
 func main() {
