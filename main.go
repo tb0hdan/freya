@@ -12,13 +12,18 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/go-retryablehttp"
 	log "github.com/sirupsen/logrus"
 )
 
-const AnswerLineNum = 3
+const (
+	AnswerLineNum      = 3
+	DownloadRetrySleep = 600 * time.Second
+	UploadRetrysleep   = 60 * time.Second
+)
 
 var (
 	FreyaKey        = os.Getenv("FREYA") // nolint:gochecknoglobals
@@ -219,19 +224,34 @@ func (c *Client) RunMassDNS() {
 
 func (c *Client) Run() {
 	var err error
-	err = c.Download("https://api.domainsproject.org/api/vo/download", "/tmp/input.txt")
-	fmt.Println(err)
 	err = c.Download("https://api.domainsproject.org/api/vo/resolvers", "/tmp/resolvers.txt")
-	fmt.Println(err)
-	c.RunMassDNS()
-	//
-	c.ProcessOutput()
-	//
-	err = c.Upload("https://api.domainsproject.org/api/vo/upload", "/tmp/results.txt")
-	fmt.Println(err)
-	os.Remove("/tmp/input.txt")
-	os.Remove("/tmp/output.txt")
-	os.Remove("/tmp/results.txt")
+
+	if err != nil {
+		panic(err)
+	}
+
+	for {
+		err = c.Download("https://api.domainsproject.org/api/vo/download", "/tmp/input.txt")
+		if err != nil {
+			log.Error(err)
+			time.Sleep(DownloadRetrySleep)
+
+			continue
+		}
+		//
+		c.RunMassDNS()
+		c.ProcessOutput()
+		//
+		err = c.Upload("https://api.domainsproject.org/api/vo/upload", "/tmp/results.txt")
+		if err != nil {
+			log.Error(err)
+			time.Sleep(UploadRetrysleep)
+		}
+		// clean up
+		os.Remove("/tmp/input.txt")
+		os.Remove("/tmp/output.txt")
+		os.Remove("/tmp/results.txt")
+	}
 }
 
 func ProcessRecord(line string) string {
