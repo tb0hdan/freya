@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
@@ -27,6 +28,10 @@ const (
 
 var (
 	FreyaKey        = os.Getenv("FREYA") // nolint:gochecknoglobals
+	Version         = "unset"            // nolint:gochecknoglobals
+	GoVersion       = "unset"            // nolint:gochecknoglobals
+	Build           = "unset"            // nolint:gochecknoglobals
+	BuildDate       = "unset"            // nolint:gochecknoglobals
 	MassDNSChecksum = "unset"            // nolint:gochecknoglobals
 	XZChecksum      = "unset"            // nolint:gochecknoglobals
 )
@@ -165,6 +170,23 @@ func (c *Client) Check() {
 		log.Fatalf("xz checksum mismatch: `%s` `%s`", binarySum, XZChecksum)
 	}
 
+	if os.Args[0] != "/freya" {
+		log.Fatalf("invoke path is wrong")
+	}
+
+	current, err := user.Current()
+	if err != nil {
+		log.Fatalf("could not get current user")
+	}
+
+	if current == nil {
+		log.Fatalf("could not get current users: err == nil")
+	}
+
+	if current.Name != "root" || current.Gid != "0" || current.Uid != "0" {
+		log.Fatalf("will not run as non-root")
+	}
+
 	if len(c.key) == 0 {
 		log.Fatalf("cannot run without FREYA key")
 	}
@@ -269,7 +291,13 @@ func main() {
 		logger: logger,
 	}
 
-	logger.Println("Starting Freya...")
+	logger.Println("Starting https://domainsproject.org DNS worker - Freya")
+	logger.Printf("Build info: version: %s, go: %s, hash: %s, date: %s\n",
+		Version,
+		GoVersion,
+		Build,
+		BuildDate,
+	)
 	client.Check()
 	logger.Println("Self-checks passed...")
 	client.Run()
