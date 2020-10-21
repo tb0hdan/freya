@@ -1,5 +1,5 @@
 # freya
-DomainsProject.org DNS worker
+[DomainsProject.org](https://domainsproject.org) DNS worker
 
 
 WORK IN PROGRESS
