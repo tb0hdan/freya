@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker-compose up -d --scale worker=3
+docker-compose up -d --scale worker=1
