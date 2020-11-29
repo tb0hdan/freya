@@ -18,3 +18,4 @@ COPY --from=build-env /usr/bin/xz /usr/bin/
 COPY --from=build-env /usr/lib/liblzma.so.5 /usr/lib/
 COPY --from=build-env /massdns/bin/massdns /
 CMD /freya
+EXPOSE 80

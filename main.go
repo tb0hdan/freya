@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
+	"freya/webserver"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -24,6 +25,10 @@ const (
 	AnswerLineNum      = 3
 	DownloadRetrySleep = 600 * time.Second
 	UploadRetrysleep   = 60 * time.Second
+	// WebServer config.
+	ReadTimeout  = 15 * time.Second
+	WriteTimeout = 15 * time.Second
+	IdleTimeout  = 30 * time.Second
 )
 
 var (
@@ -294,12 +299,16 @@ func main() {
 	logger.Println("Starting https://domainsproject.org DNS worker - Freya")
 	logger.Printf("Build info: version: %s, go: %s, hash: %s, date: %s\n",
 		Version,
-		GoVersion,
-		Build,
+		GoVersion, Build,
 		BuildDate,
 	)
 	client.Check()
 	logger.Println("Self-checks passed...")
+	//
+	ws := webserver.New(":80", ReadTimeout, WriteTimeout, IdleTimeout)
+	ws.SetBuildInfo(Version, GoVersion, Build, BuildDate)
+
+	go ws.Run()
 	client.Run()
 	logger.Println("Exit...")
 }
