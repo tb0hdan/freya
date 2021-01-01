@@ -23,7 +23,7 @@ import (
 
 const (
 	AnswerLineNum      = 3
-	DownloadRetrySleep = 600 * time.Second
+	DownloadRetrySleep = 10 * time.Second
 	UploadRetrysleep   = 60 * time.Second
 	// WebServer config.
 	ReadTimeout  = 15 * time.Second
