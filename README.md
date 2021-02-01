@@ -1,8 +1,6 @@
 # freya
-[DomainsProject.org](https://domainsproject.org) DNS worker
+[DomainsProject.org](https://domainsproject.org) DNS worker - [Docker image](https://hub.docker.com/r/tb0hdan/freya)
 
-
-WORK IN PROGRESS
 
 ## Docker compose way (recommended)
 
