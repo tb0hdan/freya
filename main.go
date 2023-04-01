@@ -270,7 +270,13 @@ func (c *Client) Run() {
 		c.RunMassDNS()
 		c.ProcessOutput()
 		//
-		err = c.Upload("https://api.domainsproject.org/api/vo/upload", "/tmp/results.txt")
+                xz := exec.Command("/usr/bin/xz", "/tmp/results.txt")
+                err := xz.Start()
+        	if err != nil {
+	        	log.Fatal(err.Error())
+	        }
+
+		err = c.Upload("https://api.domainsproject.org/api/vo/upload", "/tmp/results.txt.xz")
 		if err != nil {
 			log.Error(err)
 			time.Sleep(UploadRetrysleep)
