@@ -6,8 +6,8 @@ VERSION = $(shell cat ./VERSION)
 all: buildx
 
 buildx:
-	@docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t tb0hdan/freya:latest --push .
-	@docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t tb0hdan/freya:v$(VERSION) --push .
+	@docker buildx build --platform linux/amd64,linux/arm64 -t tb0hdan/freya:latest --push .
+	@docker buildx build --platform linux/amd64,linux/arm64 -t tb0hdan/freya:v$(VERSION) --push .
 
 freya:
 	@go build -a -trimpath -tags netgo -installsuffix netgo -v -x -ldflags "-s -w -X main.XZChecksum=$(shell sha256sum /usr/bin/xz |awk '{print $$1}')  -X main.MassDNSChecksum=$(shell sha256sum /massdns/bin/massdns |awk '{print $$1}') -X main.Build=$(BUILD) -X main.BuildDate=$(BDATE) -X main.GoVersion=$(GO_VERSION) -X main.Version=$(VERSION)" -o /freya *.go

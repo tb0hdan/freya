@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
-	"freya/webserver"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -15,6 +14,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"freya/webserver"
 
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/go-retryablehttp"
@@ -215,12 +216,12 @@ func (c *Client) ProcessOutput() {
 
 	for scan.Scan() {
 		line := scan.Text()
-		if strings.HasPrefix(line, ";; ANSWER SECTION:") {
+		if strings.Contains(line, "NXDOMAIN") {
 			lineNum = 0
 		}
 
 		if lineNum > 0 && lineNum <= AnswerLineNum {
-			if strings.Contains(line, "IN A") {
+			if strings.Contains(line, "NOERROR") {
 				domain := ProcessRecord(line)
 				_, err = w.WriteString(domain + "\n")
 
@@ -236,7 +237,7 @@ func (c *Client) ProcessOutput() {
 }
 
 func (c *Client) RunMassDNS() {
-	dnsCmd := exec.Command("/massdns", "-q", "-r", "/tmp/resolvers.txt", "/tmp/input.txt", "-w", "/tmp/output.txt")
+	dnsCmd := exec.Command("/massdns", "-q", "-r", "/tmp/resolvers.txt", "/tmp/input.txt", "-w", "/tmp/output.txt", "-o", "J")
 	err := dnsCmd.Start()
 	//
 	if err != nil {
