@@ -275,6 +275,10 @@ func (c *Client) Run() {
         	if err != nil {
 	        	log.Fatal(err.Error())
 	        }
+        	err = xz.Wait()
+	        if err != nil {
+		        log.Fatal(err.Error())
+	        }
 
 		err = c.Upload("https://api.domainsproject.org/api/vo/upload", "/tmp/results.txt.xz")
 		if err != nil {
