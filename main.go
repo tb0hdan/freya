@@ -211,26 +211,23 @@ func (c *Client) ProcessOutput() {
 		panic(err)
 	}
 
-	lineNum := 0
 	scan := bufio.NewScanner(f)
 
 	for scan.Scan() {
 		line := scan.Text()
-		if strings.Contains(line, "NXDOMAIN") {
-			lineNum = 0
+		if strings.Contains(strings.ToLower(line), "nxdomain") {
+			continue
 		}
 
-		if lineNum > 0 && lineNum <= AnswerLineNum {
-			if strings.Contains(line, "NOERROR") {
-				domain := ProcessRecord(line)
-				_, err = w.WriteString(domain + "\n")
-
-				if err != nil {
-					panic(err)
-				}
-			}
+		if !strings.Contains(strings.ToLower(line), "noerror") {
+			continue
 		}
-		lineNum++
+
+		domain := ProcessRecord(line)
+		_, err = w.WriteString(domain + "\n")
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	_ = w.Flush()
@@ -270,15 +267,17 @@ func (c *Client) Run() {
 		c.RunMassDNS()
 		c.ProcessOutput()
 		//
-                xz := exec.Command("/usr/bin/xz", "/tmp/results.txt")
-                err := xz.Start()
-        	if err != nil {
-	        	log.Fatal(err.Error())
-	        }
-        	err = xz.Wait()
-	        if err != nil {
-		        log.Fatal(err.Error())
-	        }
+		xz := exec.Command("/usr/bin/xz", "/tmp/results.txt")
+		err := xz.Start()
+		if err != nil {
+			log.Error(err.Error())
+			continue
+		}
+		err = xz.Wait()
+		if err != nil {
+			log.Error(err.Error())
+			continue
+		}
 
 		err = c.Upload("https://api.domainsproject.org/api/vo/upload", "/tmp/results.txt.xz")
 		if err != nil {
@@ -288,7 +287,7 @@ func (c *Client) Run() {
 		// clean up
 		os.Remove("/tmp/input.txt")
 		os.Remove("/tmp/output.txt")
-		os.Remove("/tmp/results.txt")
+		os.Remove("/tmp/results.txt.xz")
 	}
 }
 
