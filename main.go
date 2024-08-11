@@ -222,9 +222,7 @@ func (c *Client) ProcessOutput() {
 		if !strings.Contains(strings.ToLower(line), "noerror") {
 			continue
 		}
-
-		domain := ProcessRecord(line)
-		_, err = w.WriteString(domain + "\n")
+		_, err = w.WriteString(line + "\n")
 		if err != nil {
 			panic(err)
 		}
@@ -289,14 +287,6 @@ func (c *Client) Run() {
 		os.Remove("/tmp/output.txt")
 		os.Remove("/tmp/results.txt.xz")
 	}
-}
-
-func ProcessRecord(line string) string {
-	domain := strings.Split(line, " ")[0]
-	domain = strings.TrimSuffix(domain, ".")
-	domain = strings.ToLower(domain)
-
-	return domain
 }
 
 func main() {
